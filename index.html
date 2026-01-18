@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Portal</title>
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-color: #ffffff;
+            --sidebar-bg: #f7f6f3;
+            --text-main: #37352f;
+            --text-muted: #787774;
+            --border-color: rgba(55, 53, 47, 0.09);
+            --hover-bg: #efefed;
+            --accent: #2383e2;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            --pal-bg: #e3f2fd; /* Light blue for PAL cards */
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #191919;
+            --sidebar-bg: #202020;
+            --text-main: #d4d4d4;
+            --text-muted: #9b9b9b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --hover-bg: #2c2c2c;
+            --accent: #4ea8ff;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            --pal-bg: #1e2a38;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0; display: flex; flex-direction: column; height: 100vh;
+            color: var(--text-main); background: var(--bg-color); overflow: hidden;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; height: 45px; font-size: 14px;
+            border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+            background: var(--bg-color);
+        }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+        .breadcrumb b { color: var(--text-main); }
+        
+        .theme-toggle {
+            background: none; border: 1px solid var(--border-color); cursor: pointer; font-size: 13px;
+            padding: 4px 10px; border-radius: 4px; color: var(--text-main); transition: 0.2s;
+        }
+        .theme-toggle:hover { background: var(--hover-bg); }
+
+        .wrapper { display: flex; flex: 1; overflow: hidden; }
+
+        /* --- LEFT SIDEBAR --- */
+        nav.left-sidebar {
+            width: 280px; background: var(--sidebar-bg); padding: 10px;
+            overflow-y: auto; flex-shrink: 0; border-right: 1px solid var(--border-color);
+        }
+
+        .side-search {
+            width: 100%; background: var(--bg-color); border: 1px solid var(--border-color);
+            color: var(--text-main); padding: 8px 12px; border-radius: 4px;
+            margin-bottom: 15px; font-size: 13px; outline: none; box-sizing: border-box;
+        }
+        .side-search:focus { border-color: var(--accent); }
+
+        .nav-header {
+            font-size: 12px; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; margin: 25px 0 8px 5px; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 5px;
+        }
+
+        /* Collapsible Units */
+        details { margin-bottom: 5px; }
+        summary {
+            font-size: 13px; font-weight: 600; color: var(--text-muted);
+            padding: 6px 8px; cursor: pointer; list-style: none; border-radius: 4px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        summary:hover { background: var(--hover-bg); color: var(--text-main); }
+        summary::before { content: "▶"; font-size: 9px; transition: transform 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); }
+        details[open] summary { margin-bottom: 5px; }
+
+        .module-list { list-style: none; padding: 0; margin: 0; padding-left: 10px; }
+        .module-list li { margin-bottom: 1px; }
+        .module-list a {
+            display: flex; align-items: center; padding: 5px 10px; color: var(--text-main);
+            text-decoration: none; font-size: 13.5px; border-radius: 4px;
+            cursor: pointer; transition: 0.1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .module-list a:hover { background: var(--hover-bg); }
+        .module-list a.active { background: var(--hover-bg); font-weight: 600; color: var(--accent); }
+        /* Icon for regular modules */
+        .module-list a::before { content: "📄"; font-size: 10px; margin-right: 8px; opacity: 0.7; }
+        /* Icon for IIT-PAL modules (target via class in JS) */
+        .module-list a.pal-link::before { content: "🎓"; font-size: 12px; margin-right: 8px; opacity: 1; }
+        .module-list a.pal-link { color: var(--text-main); font-weight: 500; }
+
+        /* --- MAIN CONTENT --- */
+        main { flex: 1; overflow-y: auto; scroll-behavior: smooth; background: var(--bg-color); }
+        .content-area { max-width: 850px; margin: 0 auto; padding: 60px 50px; }
+        
+        h1 { font-size: 38px; font-weight: 700; margin: 0 0 30px 0; letter-spacing: -0.5px; color: var(--text-main); }
+
+        .resource-card { margin-top: 40px; }
+        .resource-card h3 { 
+            font-size: 20px; margin-bottom: 15px; padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color); scroll-margin-top: 20px;
+            color: var(--text-main); display: flex; align-items: center; gap: 10px;
+        }
+
+        .video-box { 
+            background: #000; border-radius: 6px; overflow: hidden; position: relative; 
+            padding-bottom: 56.25%; height: 0; margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+        }
+        .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        
+        .pdf-container { margin-bottom: 25px; }
+        .pdf-box { width: 100%; height: 600px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; }
+        
+        .drive-btn {
+            display: inline-block; margin-top: 8px; padding: 6px 12px; 
+            background: var(--bg-color); border: 1px solid var(--border-color); 
+            border-radius: 4px; color: var(--text-main); text-decoration: none; 
+            font-size: 12px; transition: 0.2s;
+        }
+        .drive-btn:hover { background: var(--hover-bg); }
+
+        /* IIT PAL Special Styling */
+        .pal-card {
+            background-color: var(--pal-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+        .pal-header { color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 15px; }
+
+        /* --- RIGHT SIDEBAR --- */
+        .right-sidebar {
+            width: 220px; padding: 65px 20px; flex-shrink: 0;
+            border-left: 1px solid var(--border-color); background: var(--bg-color);
+        }
+        .right-sidebar h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; }
+        
+        #toc-list { list-style: none; padding: 0; margin: 0; }
+        #toc-list li { margin-bottom: 8px; }
+        #toc-list a { color: var(--text-muted); text-decoration: none; font-size: 13px; line-height: 1.4; display: block; transition: 0.2s; }
+        #toc-list a:hover { color: var(--text-main); transform: translateX(3px); }
+
+        @media (max-width: 1100px) { .right-sidebar { display: none; } }
+        @media (max-width: 768px) { nav.left-sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="breadcrumb">
+            🏠 Portal <span>/</span> <b id="breadcrumb-active">Welcome</b>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">🌗 Dark Mode</button>
+    </header>
+
+    <div class="wrapper">
+        <nav class="left-sidebar">
+            <input type="text" id="moduleSearch" class="side-search" placeholder="Search title or content..." onkeyup="deepSearch()">
+            <div id="sidebar-content"></div>
+        </nav>
+
+        <main id="main-content">
+            <div class="content-area">
+                <h1 id="module-title">Physics Portal</h1>
+                <div id="dynamic-content"></div>
+            </div>
+        </main>
+
+        <aside class="right-sidebar">
+            <h4>Table of Contents</h4>
+            <ul id="toc-list"></ul>
+        </aside>
+    </div>
+
+    <script>
+        // --- DATA STRUCTURE ---
+        // Each Unit has a "pal" entry for the IIT-PAL playlist
+        const syllabusData = {
+            "Class XI": {
+                "Unit 1: Physical World & Measurement": [
+                    { id: "xi_1_1", title: "Physics and its Scope", v: ["i_Bg6eUGNqQ"], p: "19AqeFKUlqTnKmId8qvByuyQRCCksc1Y_" },
+                    { id: "xi_1_2", title: "Units and Measurement", v: ["JMu2hInPk1w"], p: "1zI9KaFoT5NiAijcYmik2G0VZv1BvK4ck" },
+                    { id: "xi_1_3", title: "Errors in Measurements", v: ["UglrGKJZoFQ"], p: "1qiEbJn1tip48nr0-GCv9w0q__izMW0tB" },
+                    { id: "xi_1_4", title: "Dimensional Analysis", v: ["TCLpVhZ9e3A"], p: "1tpJnQ6bO6DRCNodexO83qWTHjdisCml8" },
+                    { id: "xi_1_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["fmna0qleDhs", "HQdy2Z-GmdY", "SwwJqp5Yp2w", "k_CoXqKDyuQ", "DgMdre5q0tc", "D7xhPNTmKVg"] }
+                ],
+                "Unit 2: Kinematics": [
+                    { id: "xi_2_1", title: "Rest and Motion", v: ["dthwJG9hgBE"], p: "1WDWOhZM8ETk6NxR1STl8yrxK1bqfk6MX" },
+                    { id: "xi_2_2", title: "Distance and Displacement", v: ["2m0X7MtUqok"], p: "1T6-o3FG1M-YTaf8f-LT766r2XcVS6NuJ" },
+                    { id: "xi_2_3", title: "Speed and Velocity", v: ["bkJs5_3lpvQ", "GGL6oEj6EaY", "n50Pqynn5tw"], p: "10tPxHRHcNYG3j0DdnkaZ0UTHA358ufPT" },
+                    { id: "xi_2_4", title: "Accelerated Motion (1D)", v: ["PW2FX-Zea2Q"], p: "1Ve_09G5pAUz0kJRzYqj-gpB-8xdxUJmw" },
+                    { id: "xi_2_5", title: "Equations of Motion", v: ["DpI6w-Zg4nQ"], p: "1wNiILJ-sAl6DZ2ENS_NnXtgSDGHgxPP3" },
+                    { id: "xi_2_6", title: "Vectors", v: ["sXs6kmh9TIw"], p: "10B7rFCwMW62ObY80HQ5sYaXGbo-yw2aX" },
+                    { id: "xi_2_7", title: "Projectile Motion", v: ["BVKLDox0I-A"], p: "1cGNa1NhPhzjUgAtCYTr_wxzxDwQFp6Pf" },
+                    { id: "xi_2_8", title: "Circular Motion", v: ["zQx7t2UDyIQ", "kd3XMYcLqSI"], p: "1TlWGAF7g8T_qxft1iIV8P_E1pGR03Vt0" },
+                    { id: "xi_2_9", title: "Problems on 2D Motion", v: ["leRmxNf9mjA"], p: "1L0I_n54kc9JO2TpxttblAxyspBvNVnSW" },
+                    { id: "xi_2_10", title: "Math Tools for Physics", v: [], p: "1nlePBEsiTSu3jx_l2MYhEf1t9ANtWl_r" },
+                    { id: "xi_2_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["Z63Ch4W6PMM", "AfMbfSkydKA", "bqo3lFQfNOw", "O7kTOkri4AE", "rYCipFGjzXI", "AtSJDA8TxQM", "drtdGg89Psw", "_JNGmr6onlg"] }
+                ],
+                "Unit 3: Laws of Motion": [
+                    { id: "xi_3_1", title: "Newton’s First Law", v: ["zciJSvBV208"], p: "1vevu06nqt7dlupcKO0REyGGMJLsS0uR6" },
+                    { id: "xi_3_2", title: "Newton’s Second Law", v: ["V3PpbOy7Tzc"], p: "1nvUtW24tI0bjDX4LBUWJ_r0XM8ucFrE7" },
+                    { id: "xi_3_3", title: "Newton’s Third Law", v: ["Tgj0SQsi3hU"], p: "1ljiI42OfVh0FfeHhLtaR4xD0YH4KZ5D0" },
+                    { id: "xi_3_4", title: "Types of Forces", v: ["Pt0vocV_7nw"], p: "14-tOBb4DE1A3YwgvAqGIGcoB4Gu3eHXn" },
+                    { id: "xi_3_5", title: "Friction", v: ["ozF5daapfsw", "8928ST__gtw"], p: "1QQNzPsvTUaP65SGsrg4_DDQ9xdeGv97W" },
+                    { id: "xi_3_6", title: "Circular Motion & Banking", v: ["Zt0OM98GGbY", "QKzzYlC2SSw"], p: "1WO7oYrIsMTDUJP-W41wwwu6utQ75rMLL" },
+                    { id: "xi_3_7", title: "Problems on Laws of Motion", v: ["Jtl2iHXImao"], p: "1s7QfjTIvkpvhiIsnZxsp53lQrevpRBiI" },
+                    { id: "xi_3_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["cTf8b3RMHqo", "bwiof-yWa3M", "gIahHPH3018", "Oin1kTCRvCs", "sW7f_IuvT6E", "BZDfM6SDaFQ", "9IaTUklp6YM", "mamhKWrA8Ag"] }
+                ],
+                "Unit 4: Work, Energy & Power": [
+                    { id: "xi_4_1", title: "Work", v: ["p4zSbgsIVl8"], p: "1AKfi9VLJSJZTmW8EQhLCTywlP5IjlHBD" },
+                    { id: "xi_4_2", title: "Kinetic Energy", v: ["p4zSbgsIVl8"], p: "1kTjlfDWWqdpBareSaXAcEryO_QAN3irl" },
+                    { id: "xi_4_3", title: "Work-Energy Theorem", v: ["5aLJyZQLA-Y"], p: "" },
+                    { id: "xi_4_4", title: "Potential Energy", v: ["rTDYWtZp25M"], p: "1YwcMp2sALHL8YKVVnlwenUCvcmnIs_-k" },
+                    { id: "xi_4_5", title: "Spring Constant", v: ["coBJ30zDW7s", "s7dp2FGQiYw"], p: "1UUn8TfvsL_dAE7uS8d3VdJ4e_Fw_4lzU" },
+                    { id: "xi_4_6", title: "Work Energy Power (Full)", v: ["p4zSbgsIVl8", "5aLJyZQLA-Y"], p: "1pe2bC7k7PvjoLjjN10Ve8WvHO8j0n1N7" },
+                    { id: "xi_4_7", title: "Collision", v: ["9V3Y0g9-6hQ", "9uIumKgGNQU"], p: "1FBgTkB6VdK0PUiNPOo0z_hmIoowBwg2P" },
+                    { id: "xi_4_8", title: "Collision in 2D", v: ["4ZOqgZ7clv0"], p: "19D3GsOzPln39-rGXGVT34vREqkLqoFgc" },
+                    { id: "xi_4_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["0kzvyEtW9QA", "skJQGH8wp0Q", "dqZ7O-JWsso", "fZfgksct4Qk", "ib3M_5BmEPQ"] }
+                ],
+                "Unit 5: System of Particles": [
+                    { id: "xi_5_1", title: "Rigid Body Motion", v: ["HEwJ_YCVcmI"], p: "18pdjrMW1ozEhOYNGZbDKve7oP1jHA1xU" },
+                    { id: "xi_5_2", title: "System of Particles", v: ["FndvsP5xXMU"], p: "10ft6Kk0EBdSvNWPgvZDZQ7pmaJdszixQ" },
+                    { id: "xi_5_3", title: "Rotational Kinematics", v: [], p: "1nfMy8YyDtJwuTJOLWNDO-MknEMpCRKRI" },
+                    { id: "xi_5_4", title: "Moment of Inertia", v: ["A4KhJYrt4-s"], p: "1ls-aZiAiiNkyTAODDAF-oBHjYo_SdQc2" },
+                    { id: "xi_5_5", title: "Torque", v: ["yVpt95sHpjk"], p: "1G6xnl_E40YCEVo8vwn-LjioYTe5Pgm4F" },
+                    { id: "xi_5_6", title: "Mechanical Equilibrium", v: ["JqkK-ainRuM"], p: "1-j4cgj1BTo3qEGZmiClby2oE3MwO_o-B" },
+                    { id: "xi_5_7", title: "Angular Momentum", v: ["t2nxJR-hfwU", "iH248gGi0Sk"], p: "1QHeEMGc2QHdnsZozbhMTBUa4EveL4Wny" },
+                    { id: "xi_5_8", title: "Rolling Motion", v: ["QiQy6RDBpqA"], p: "1LG2lvE__QvkNb-81ODXz6caiyTMf8-C7" },
+                    { id: "xi_5_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["ZFEExw-qUSk", "Jtud5iwTd_I", "vIz8kJojyi0", "kmSTigu8nCQ", "mgjHS5SzmeE", "prAZFFMs34k", "zD3Le2jhaTE", "kfoA6HJ0qCc", "uWNE8VSv43o", "HASWu-YFmSM"] }
+                ],
+                "Unit 6: Gravitation": [
+                    { id: "xi_6_1", title: "Kepler’s Laws", v: ["XsyK8XHV12A"], p: "1z-TWzmAyyNs_6qnRY0t2nPWsEuSPgO7f" },
+                    { id: "xi_6_2", title: "Gravitational Force", v: ["fN9m4ggOpKo"], p: "" },
+                    { id: "xi_6_3", title: "Acceleration Due to Gravity", v: ["NRATRK0eCB4"], p: "17-QsrhcID2tuiZTeNdG7OwkvWaEQHfgY" },
+                    { id: "xi_6_4", title: "Gravitational Potential", v: [], p: "1l_wkwsELK9m1YyqCHt43D_WtpGqBubMZ" },
+                    { id: "xi_6_5", title: "Satellites & Launching", v: ["GLxOXwm8UwA"], p: "1rkOV64ofQYZJxpwl1CIi0G1EJQw60juZ" },
+                    { id: "xi_6_6", title: "Gravitation Problems", v: ["WXn8F7alGYc"], p: "1G8Fu-cWTctF1t7rDQiTgUyLbxDYbE9dU" },
+                    { id: "xi_6_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["aiHgiily2eQ", "Z61k5if5e8A", "P7I0XWkrqbA", "kldgNJj_6GY", "UJBk46H_Sx8", "m7CpAd7NZkI"] }
+                ],
+                "Unit 7: Bulk Properties": [
+                    { id: "xi_7_1", title: "Bulk Properties of Matter", v: ["l7tAILhx40M"], p: "1niBzsW0ad3ognXqVhSVNcgTR8DWT6PLN" },
+                    { id: "xi_7_2", title: "Elastic Behaviour", v: [], p: "17ChO0NfcK3W4YEuu6UJWU4crdVa2Egwq" },
+                    { id: "xi_7_3", title: "Searle’s Apparatus", v: ["tZ-gAGoBrKM", "0maHQNr4GLQ"], p: "1s5QwCz5ZfaOveZRdcokt-ZYeOvQE1BCC" },
+                    { id: "xi_7_4", title: "Bulk Modulus", v: ["hJXXaNEq2E8"], p: "1joskstDiwcl9aYSYbgZ9VVx_NsVaQzQw" },
+                    { id: "xi_7_5", title: "Modulus of Rigidity", v: [], p: "1Dcgn9WufIh1JrOKjXCrBgmDSGGlxqH3d" },
+                    { id: "xi_7_6", title: "Fluid Pressure", v: ["6FOvF4mnxPo"], p: "17EKg2lYa4AojrkSdi93lGHjGkEB5CDJM" },
+                    { id: "xi_7_7", title: "Viscosity", v: ["bIYBHtoY11E", "wnAmnDk59j0", "grB3XyUPUIQ"], p: "1fI7NgN44DJ6P8tTyXbjFaP9xzmTBsNR_" },
+                    { id: "xi_7_8", title: "Fluid Flow", v: ["IRbNlT7mVnc"], p: "1mOL83OimPNIm57g8_lmR4RG9Pkr9qyHH" },
+                    { id: "xi_7_9", title: "Bernoulli’s Principle", v: ["gv1_WbPJTTM", "FFN0CegWagU"], p: "1L5WATVOMwfxt4-iFAVlD2VngfCP1Yw5E" },
+                    { id: "xi_7_10", title: "Surface Tension", v: ["_OwQxZyaw1w"], p: "1K9rWhvX84Znnij4jZkxoMmIoTIz_Z8wz" },
+                    { id: "xi_7_11", title: "Effects of Surface Tension", v: ["1qqRBY2-bgo"], p: "1orHpOg_i083b9rmcxrDRb7ZVGYFVs2Bq" },
+                    { id: "xi_7_12", title: "Thermal Energy", v: ["rAeENiKLZFE"], p: "1APcIQDzEeiTCpuyB3XvCfqD1KTX2zuxh" },
+                    { id: "xi_7_13", title: "Thermal Expansion", v: [], p: "1VKY2k2cPQH0QGBVhbRHI263mTb8_M27u" },
+                    { id: "xi_7_14", title: "Specific Heat", v: [], p: "1D1PqhSNOZnZUYrriRzhjaNuTXXsb8-U-" },
+                    { id: "xi_7_15", title: "Change of State", v: [], p: "1B6Aw6HLJjyjkJzdohd-d6nitfXy4v4pf" },
+                    { id: "xi_7_16", title: "Heat Transfer", v: [], p: "1NZ8TPDXtdRGxYD1sA-p-2cXpMBYGYkXT" },
+                    { id: "xi_7_17", title: "Radiation", v: ["ZkPL95reJTg"], p: "1XVcXKzrK-bwznanLrwlB2hCnwwboUomw" },
+                    { id: "xi_7_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["hMV2mGo8HDo", "byxgVpwcBC8", "yWOCj6yP-bk", "dQNvD4D5g4c", "enB3li7t2Ck", "_0GF5VZ9-7s", "ZI-KNqoyw4Y", "Uz-7VxPPQdg", "DPK1z3QSY_8", "QLL-spqasio", "pChNdnkp0dQ"] }
+                ],
+                "Unit 8: Thermodynamics": [
+                    { id: "xi_8_1", title: "Basics of Thermodynamics", v: ["rAeENiKLZFE"], p: "10CkeeHv4p0VFVmt3kzdGMyPujSJkayTM" },
+                    { id: "xi_8_2", title: "Internal Energy", v: [], p: "1bDk_Jlnj0aEARwhsyEn7HTgL9ZLk_lKY" },
+                    { id: "xi_8_3", title: "First Law", v: ["Y_YxUCIb-mw"], p: "1Inwv5Dn1J0QDQncQDIa_5OjNzxBEQ3gu" },
+                    { id: "xi_8_4", title: "Second Law", v: ["sfXZn7eIjlI"], p: "143kNLzcDfAMTMfkIyuitT0rBE0OllFuH" },
+                    { id: "xi_8_5", title: "Refrigerator", v: [], p: "12W8kRGc9HyDmNdEmoJxJzY7lClSzV7Z_" },
+                    { id: "xi_8_6", title: "Questions on Thermodynamics", v: ["WQXL5scZxks", "ZYEQDVpRoAI"], p: "1a0SfCYFkylr02IZ6TAy3S5yhu5CvksUb" },
+                    { id: "xi_8_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["sNcifHNnWJA", "H-7nKXQvw5A", "WH3MgW5M1RU", "N8FIYzhygC8", "mSIIo1Ji4tQ", "OmLIToA2000"] }
+                ],
+                "Unit 9: Kinetic Theory": [
+                    { id: "xi_9_1", title: "Ideal Gas", v: ["UEXMU_rmEyc"], p: "1YEi_DF3NpneKXhRA-RK4ND_q4ADwWYGl" },
+                    { id: "xi_9_2", title: "Pressure Exerted by Gas", v: ["UEXMU_rmEyc"], p: "1LoXPAHvFXjSw0BnYLhd543DiAdwXI8O1" },
+                    { id: "xi_9_3", title: "Speed of Molecules", v: [], p: "11YvDSLOB57W6GZzMkvKmOtIkckwkFW4S" },
+                    { id: "xi_9_4", title: "Degrees of Freedom", v: ["bi0kGkJ3zo4"], p: "1M6x8m8iSCXL8dvWlN8g3rsQqoOc5aF78" },
+                    { id: "xi_9_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["buPuKAcKqZw", "qKe7vl1izRw", "3mORIhPGJ7o"] }
+                ],
+                "Unit 10: Oscillation & Waves": [
+                    { id: "xi_10_1", title: "Periodic Motion", v: ["60eOgKYHQHk"], p: "1vP_5tvvKxDULMSoTrU7u6p7TCCRysPvk" },
+                    { id: "xi_10_2", title: "Simple Harmonic Motion", v: ["60eOgKYHQHk"], p: "1y3BSMh5uGPd3NozAMeJVc1UpvIbiJqMv" },
+                    { id: "xi_10_3", title: "Kinematics of Oscillator", v: ["3rPBzebIt8Y"], p: "1sT2cn8P-KnLLGk0iSmaGhBSApraYfWsb" },
+                    { id: "xi_10_4", title: "Energy of Harmonic Oscillator", v: ["_rHRN2t6pT8"], p: "1V7cV2c_AVk98osEHGgmX-ICYYfgAfjsL" },
+                    { id: "xi_10_5", title: "Dynamics of Harmonic Oscillator", v: ["syAQ0L8Atx8"], p: "1goU7ulTXsmDYGQudJJJXBfZtxKn1gipa" },
+                    { id: "xi_10_6", title: "Simple Pendulum", v: ["PrrcFt5xuoo"], p: "13s-SZsai6aqsh1bBZzImN1zQ3NFqA3Ac" },
+                    { id: "xi_10_7", title: "Pendulum Applications", v: [], p: "1wAR2LJ5Az0DgeiMuWaahSVer5YsS6iFW" },
+                    { id: "xi_10_8", title: "Vibration and Resonance", v: ["cF6DvagR_IE", "OB9coAwyh5Y"], p: "1C6SzD6eSXmeir6XYkpEZl7TB9t9PqjP-" },
+                    { id: "xi_10_9", title: "Wave Motion", v: ["TaiRoMj4UK0"], p: "1UCQGW4fHIiDmVCUcCLwyae6HE7aDNmZ8" },
+                    { id: "xi_10_10", title: "Propagation of Waves", v: ["YchgY4btK5c"], p: "1WAt8W6ySoRlMeS50uBOp5TAfz22MDUL6" },
+                    { id: "xi_10_11", title: "Properties of Waves", v: ["Bgg0iVxlrzA"], p: "141J2uRHzg4FJj2uIeatD7y3r5oBcB3BE" },
+                    { id: "xi_10_12", title: "Standing Waves in Strings", v: ["syAQ0L8Atx8"], p: "1DxIk12eqGVSip_v34AhljVp75I0E6tZi" },
+                    { id: "xi_10_13", title: "Standing Waves in Pipes", v: [], p: "10jPwFs7yJ9LAdZI7zgOcCwv-6qN1sW3L" },
+                    { id: "xi_10_14", title: "Beats", v: ["uo-8aemA07w", "ShyhmM3mxHo"], p: "1dc-u65lfs27D7I9Ue0r7POTabRL4ifXw" },
+                    { id: "xi_10_15", title: "Doppler’s Effect", v: ["Qc05URyRVHI"], p: "1Di9mdadXgbIWo_sTsi6YRWsitNe9RCut" },
+                    { id: "xi_10_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["0IUFKqSOQno", "kc3HUEv4FF0", "Kej7ztES5aw", "165Gffi7gY4", "BpsUVGOkJbQ", "Rq3E1RTDbHc", "kqG0571FcTc", "nrJrV_Gn_Cw", "IR7WluF3WQE", "Ks4kJGWhi-8"] }
+                ]
+            },
+            "Class XII": {
+                "Unit 1: Electric Charges & Fields": [
+                    { id: "xii_1_1", title: "Electric Charges & Properties", v: ["oNZjrugO34Q", "zJBaSUi8k-o", "6ggKnpCpGLc"], p: "1888cl_Hn1JVRcAHUlbnNQ_rvqSHHvcmd" },
+                    { id: "xii_1_2", title: "Force Between Charges", v: ["hQ6gQ-Hfnzs"], p: "1rGw3UgbQhyI1uLLgR5QFvvUmP9A4h9ss" },
+                    { id: "xii_1_3", title: "Uniform Electric Field", v: ["QQrqY_kFRDg"], p: "1Nw95g4OIYuyACTcj1f4Wje1YTZn7u99m" },
+                    { id: "xii_1_4", title: "Electric Dipole", v: ["KU25akWVst8"], p: "1sv5W-VHcRyu24F8zbL85SDFpjqrz3ufQ" },
+                    { id: "xii_1_5", title: "Electric Flux & Gauss Law", v: ["uXK00OlzDpc"], p: "1Mve9Yy9bUaI46i97S9KR2zZoIB-hn7fl" },
+                    { id: "xii_1_6", title: "Application of Gauss Theorem", v: ["UNSJU34JdPk", "pi7zqzG-dHs"], p: "1RD18dn5sqlHFi4GhRNGSGLZLVtkLKz_Q" },
+                    { id: "xii_1_7", title: "Potential & Equipotential", v: [], p: "1aRwOyzqrCihdMTBmzYslU2XV7T8teph3" },
+                    { id: "xii_1_8", title: "Electrostatics of Conductors", v: ["CU-wemTmOSE"], p: "12of5WO3mStZ5bL2oH2yuyYwcipRtwDgv" },
+                    { id: "xii_1_9", title: "Capacitance", v: ["5NyrjDQXmck"], p: "1DfHY65QtzF8wRMaQIVJ8KvOgSqFG3vRv" },
+                    { id: "xii_1_10", title: "Potential & Capacitance", v: ["M8Y2k08kHKA"], p: "1Irmmh4_UOQpsk8aFUYbqrRWz8vFN3DLe" },
+                    { id: "xii_1_11", title: "Capacitor Problems", v: ["f7GiHbw20-E"], p: "12UscCaTo89ibeBNjLhd_508W8cnogb6S" },
+                    { id: "xii_1_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["V3eDMrG0iDA", "F5KFYBdjzuE", "O9AFYHTJkF4", "5kQfvEw9Wrk", "3rqE3UdVGso", "mW850ubuqwA", "b0Z0rLl-ao4", "nxkvz9rdeec", "mXGPp1vroVY", "8n2_4-oprsw", "3Re5YHi9vR0", "49poVeSPml4", "b3XW2wskre8"] }
+                ],
+                "Unit 2: Current & Electricity": [
+                    { id: "xii_2_1", title: "Electric Current & Drift Velocity", v: ["H4HtikOtfNw", "_jAc9PbQJCQ"], p: "1qG9SmzbAnVhVAH52PQpitwtmp9MTCFV9" },
+                    { id: "xii_2_2", title: "Resistance & Resistivity", v: ["RFIHeSsu7MQ", "4-GxinG7AVw"], p: "1Gn5zCjGTJ2x0eLRXRx20QsdpSOCDWviP" },
+                    { id: "xii_2_3", title: "Combination of Resistances", v: ["vUzYsfGTM2I"], p: "13SpoBgQuCtQG2MRrDdw-eKNNZP6KEJfv" },
+                    { id: "xii_2_4", title: "Internal Resistance of Cell", v: ["bribXH2eg20", "AfOip2gLd38"], p: "1zMKqvs31SklyeFGeuUGlmtFWbcSOJfTS" },
+                    { id: "xii_2_5", title: "Kirchhoff’s Rules", v: ["zWmJI-w0nUU", "KCBx9l1lrp4"], p: "1lpUJZh34Ppbp1J-CHYBmiqXu8Af0Ey6P" },
+                    { id: "xii_2_6", title: "Wheatstone & Meter Bridge", v: ["iDd0QsoLZ8I", "Xz0plg0--hI", "8tc4IK5Rdq8", "DiPTFfoSUhk"], p: "1aWVOYzDIa0lYwLK2ft3jzXdGgQggTZWQ" },
+                    { id: "xii_2_7", title: "Potentiometer", v: ["DiPTFfoSUhk", "CuDuFqdiFoM"], p: "1wWCx3FjIdZ5UPJjOxCgehGRhk6qfmbxr" },
+                    { id: "xii_2_8", title: "Electrical Energy & Power", v: [], p: "1B1tdD7OYSe9qPFi3yn5SGBytiftxzlFl" },
+                    { id: "xii_2_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["PE1pyLC8Foo", "og42xNxvex0", "IuHnbPznZPI", "0kwM0FrvCnw", "o2OO9ucVbN4", "3xT8cLYoQ5g", "R8zHsGphOyw", "cduS99ArTRE", "miMRf1aWZRs", "fJ4SBs1qI58", "_qm7hC7mMRw", "Zqq7y1Df9r0", "bIHYZXTjg3k"] }
+                ],
+                "Unit 3: Magnetic Effects": [
+                    { id: "xii_3_1", title: "Biot Savart Law", v: ["NxIGF7QcmyA"], p: "1n3pkyi3zC_Tl9iKa5ysMlkDCl0lly5nw" },
+                    { id: "xii_3_2", title: "Biot Savart Problems", v: ["gRO_Fumpbd8"], p: "1UyL76RF6uybZAKAXTRCV-snzJUgvsbGU" },
+                    { id: "xii_3_3", title: "Ampere Circuital Law", v: ["uCDCqESuBZQ", "iyQbRbMeHS4"], p: "10rpvrFvcSMruIu5o_euGNKHFuUf5WAxQ" },
+                    { id: "xii_3_4", title: "Cyclotron", v: ["Y45kpWwcnnE", "lmOQmXx1AGg", "ZLBBdm9MoFk"], p: "1XsGiDML0LfgjYNjlYlVxBcigFAe1I07d" },
+                    { id: "xii_3_5", title: "Magnetic Force", v: [], p: "1q8iLkVT5asQ-eTXhNC8lsMNO8j5cTgAq" },
+                    { id: "xii_3_6", title: "Torque & Current Loop", v: ["sBuD5_dhX_4"], p: "11Kh4wF4R8lMJuhd6dmDQYX9B9C--31U1" },
+                    { id: "xii_3_7", title: "Moving Coil Galvanometer", v: ["sBuD5_dhX_4"], p: "1gua48nkJglh4XQU2kJApGLFsTySQ2zFc" },
+                    { id: "xii_3_8", title: "Magnetic Dipole Moment", v: ["UdZUVahZVZw", "EofgB-6CMhg"], p: "1EA8zH91YvsADu8fv77VwX1_ZgwlaZlU2" },
+                    { id: "xii_3_9", title: "Classification of Magnets", v: ["Y9S15W-gKyU"], p: "1B0ek_OWIlWIjG_MzDlFCtchjzxrX6YNY" },
+                    { id: "xii_3_10", title: "Earth’s Magnetism", v: ["XA-UdxQM-SE"], p: "1EONPVcPU4MXx5FhFe3FwFKiW0z1uNkUD" },
+                    { id: "xii_3_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["GWsg0YpO0T8", "DdeAZYh55lg", "h6t_KcFazQM", "5Uqt3Igj_Uc", "Y6ngDf_f-O4", "4HW3uOWOz20", "KvDLYnpSzfE", "yWa_2P6CDpw", "whAztOMIwLU", "kuItyLPr36Y"] }
+                ],
+                "Unit 4: EMI & AC": [
+                    { id: "xii_4_1", title: "Electromagnetic Induction", v: ["RGUF2BhaYxI", "U8-bWMdWCGs"], p: "1-_Qr0ZjkKSUrxtm95Arwtwg59Y90E6OE" },
+                    { id: "xii_4_2", title: "Lenz’s Law & Motional EMF", v: ["i9yeqWXt29M"], p: "1cfoa3rW_4WPg4hlINpl8YRl2Xw3KlmhW" },
+                    { id: "xii_4_3", title: "Eddy Currents", v: ["gsG3neiRars"], p: "19L3pygXW9qEUnqSyf9POiaxDYCVthiN2" },
+                    { id: "xii_4_4", title: "Alternating Current", v: ["_BsAazf7YqQ"], p: "1CyuQRhpWJ6cyG-fMMewVl3Pv0-U9gE8p" },
+                    { id: "xii_4_5", title: "Components of AC circuit", v: ["f0_Ud2qkV7k"], p: "1VG5JfW2PkOZc0sFXnuXHlzwBUChLPqPZ" },
+                    { id: "xii_4_6", title: "LC Circuit & Oscillations", v: ["0ImQiPUbpaU"], p: "1eqi8n96zo8mzISGFknnESQZrZbDgdBgi" },
+                    { id: "xii_4_7", title: "LCR Circuit", v: ["cUMg6m9eZA0"], p: "16fDaqsbX4nUNrJqHCOAPXE0liozMdWN7" },
+                    { id: "xii_4_8", title: "Transformer", v: ["vSkAA2pUI5w"], p: "1mB4nQdVTaEZIEYL3tfacVHwlmSLAQzYw" },
+                    { id: "xii_4_9", title: "Power Transmission", v: [], p: "1AzDXso15l00hBAle62xpgjxna-9hw8L5" },
+                    { id: "xii_4_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["XT-UmPviH64", "RKNBCeXATa8", "QfAr7RNIRPA", "PuxtW2-Fa8s", "cVKgO87gqO8", "BCLOMBCTzrw", "ADA9OCSp7ME", "Qkp0yRUHe2w", "LhQ5vQ7lFzk", "3Art7m638CU", "ATPZ_mtVpDk", "j4cxcVNRrM8", "ecuZP6IljDQ"] }
+                ],
+                "Unit 5: EM Waves": [
+                    { id: "xii_5_1", title: "Maxwell’s Equations", v: [], p: "1yjvrqwztlgQFHXcQoOi3iq-YSVEjf2BD" },
+                    { id: "xii_5_2", title: "EM Spectrum & Uses", v: [], p: "12qEU9l3mQfAuc-eMFuierXMHNbCRTgBq" },
+                    { id: "xii_5_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["N5FQ8rk9LEE", "oXmiNL7bD-s", "3IPVZYf7C-U", "tw3lZ-GFgpk"] }
+                ],
+                "Unit 6: Optics": [
+                    { id: "xii_6_1", title: "Optics Basics", v: ["ExEnili6VeI", "sjifdjM90I8", "rTw6jiNKQOA", "u7L_iukwKAY", "Na0AgOYTh_E"], p: "1CgiGy-9SoNE-Ohkcs6c3NR9B3sTI7SMv" },
+                    { id: "xii_6_2", title: "Reflection (Spherical)", v: ["BBpQsrx5K6c", "SfZSkegtw5Y", "y8zZX2Y8jEg", "vL1iXN77c6g"], p: "1sijwJM38B00T2moa4Lj1iJr0MIW3dDgw" },
+                    { id: "xii_6_3", title: "Refraction & Glass Slab", v: ["5Db7S4OtjJ4", "HhHa-BLmd1M"], p: "1LyCl_xRDaV-4nQbFK_kRk9FAB1UJV4E8" },
+                    { id: "xii_6_4", title: "Special Effects of Refraction", v: ["WGlVHBlZ7pQ"], p: "1anD5UWt-_T-LQaFEiR1BUq0Y98i41KiQ" },
+                    { id: "xii_6_5", title: "Refraction Through Prism", v: ["jUtNCVxBDoA", "7n2Tptc8L68"], p: "14fR7gXEn0pL2AitEJLG_B6Y8wNZrKQS0" },
+                    { id: "xii_6_6", title: "Refraction at Spherical Surfaces", v: ["7n2Tptc8L68"], p: "1swDlYitcT-M-plEjzouMSMe6ECs_sYBR" },
+                    { id: "xii_6_7", title: "Optics Experiments", v: ["U1Kh7tBpa8Y", "DNYQLrDGNxE", "3yNR5Ahy_hY", "niCQTa7pWAA", "--EIQCpKjSI", "t4TOQ2477ms", "8ilpgPW3fWo"], p: "1JxAHnJk6qZ67Nmt7_IwCCtaN2CsPUnb4" },
+                    { id: "xii_6_8", title: "Natural Phenomenon", v: [], p: "18jnBosoMBBfssIgUZzYADrCMvkNHs5n4" },
+                    { id: "xii_6_9", title: "Optical Instruments", v: ["Nx4uVJ4rJko", "xt-BJZV9vVU", "on6rZSDooNE", "dPh3XDVVPyM"], p: "12q8MlxaLU4-6p2Um0QjFu3iSUePgZybt" },
+                    { id: "xii_6_10", title: "Wave Optics", v: ["U3dT4qCjwFk", "CFoMQ9q98hg"], p: "1i1rY7OVPYQ0ht35hKAk7_YpFUL670Y1f" },
+                    { id: "xii_6_11", title: "Superposition", v: ["ZWj7DSVY7Ac"], p: "1LgY28S81zZRhTC0TA2NGuX4jMTzoc3KK" },
+                    { id: "xii_6_12", title: "Interference", v: ["eWvChTN8qS4"], p: "16nF5n-QWUh0FpciEhlo1h8iEI1yHU7r-" },
+                    { id: "xii_6_13", title: "Diffraction", v: ["eWvChTN8qS4"], p: "1ToCErmvvs3PMKgO83JpXILJf11FeX3c5" },
+                    { id: "xii_6_14", title: "Diffraction in Daily Life", v: ["YJE6c1MUIS8"], p: "18gtTW8gJyXDNlPufNKbUw3w1YiTP_ktg" },
+                    { id: "xii_6_15", title: "Polarisation", v: [], p: "1cLnX9dy3OAzTT-PEDRZOdFktTYgkma88" },
+                    { id: "xii_6_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["e2MArppYcM4", "el6J8RiVJnU", "arvPQu1cwcY", "f7TK3KUBR1o", "BDPKTNfhEac", "mqgDhnJmW8A", "1HJpMSQVZ6Y", "r5r-PULaw7w", "67CoKmyT9xg", "b6k8RpZ1GQk", "is9a4g3mFkE", "msjm3DhhoWo", "nELYaf_N528", "aZfwuZ0vStI", "JPqR9cpZeOU", "XaYmgL0nOp4", "PEXSH8dB-Uk", "1o77lzPKFCg"] }
+                ],
+                "Unit 7: Dual Nature": [
+                    { id: "xii_7_1", title: "Photoelectric Effect", v: ["KUQ5XQMVn3g"], p: "1izandXvQ50PRqIRpuuFP3w0fDtoi_QGo" },
+                    { id: "xii_7_2", title: "Study of PE Effect", v: ["KUQ5XQMVn3g"], p: "1n89oKCiJG0i43m8IZCR65XAFk70ZAv6w" },
+                    { id: "xii_7_3", title: "Einstein’s PE Equation", v: ["i9CuYlAkbGA"], p: "1Q3K0tCrLubp6zUiEvEBCl0vEwZinL9GU" },
+                    { id: "xii_7_4", title: "De Broglie Waves", v: ["_2D9TD65j0Y"], p: "1SQqeS7Il7MD5iaJA0VY7SYwxCkjsDHqj" },
+                    { id: "xii_7_5", title: "Application of Dual Nature", v: ["gN5VdPeWpk8"], p: "1Npge7VJv92bvohD3STEwYyi5tksno-2h" },
+                    { id: "xii_7_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["S7Gx7MQXKCM", "6xxqhAOzAXg", "aO21ufgJdVg", "dJkXdFJ8bKE", "HHay9UEClsw"] }
+                ],
+                "Unit 8: Atoms & Nuclei": [
+                    { id: "xii_8_1", title: "Early Atomic Models", v: ["BN6bmcvPE5A", "7mD9p9qVopg"], p: "1HnaBoBNwGIR5BlEaIL8be-_BviGMGb0Z" },
+                    { id: "xii_8_2", title: "Bohr Model", v: ["7mD9p9qVopg"], p: "1u1asM4nrKWPTGncb62vvpmM-6uo8FUoQ" },
+                    { id: "xii_8_3", title: "Bohr’s Model for Hydrogen", v: ["j2IypY3c0MQ"], p: "1KYdRItI3nyiDHml4tndFk0ECt_zrO3xr" },
+                    { id: "xii_8_4", title: "Atomic Nucleus", v: ["Rzhro-oNrdM", "rkKuOGQL83k", "IgM-Jg_BkDA"], p: "1KXpRw0p2NXc_FeJN2cIFVOx-bgFDorfU" },
+                    { id: "xii_8_5", title: "Mass Defect & Binding Energy", v: ["1uqdkSRD-Xw"], p: "1twSnqzW1oqke6DtuRS0PW2QJHn_M1lt_" },
+                    { id: "xii_8_6", title: "Radioactivity", v: ["CbNMnzC5xK8"], p: "1QCr1rrmBaVmZPqW256XjyYvfjnBRk5MD" },
+                    { id: "xii_8_7", title: "Nuclear Energy", v: ["1uqdkSRD-Xw"], p: "1H6dUTrMtOuCm6xxC1tpxNYIQuSSMmwgE" },
+                    { id: "xii_8_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["Bx7wX-Mm1q8", "A3thegd3dxk", "tzxPv_xJQt8", "kuxA-zbbe50", "TtU_Ftn4OMg", "I3RNbj7v8BU", "AgEZKQwneQA", "Ftoqlg4c-1I", "o6Ep7-HELv8", "1Fdr0P3BOjk", "9A75Hqs-rdE", "PdTWLLZTSsU", "7-qxdTMJYIU", "A3LT226S4tY"] }
+                ],
+                "Unit 9: Electronic Devices": [
+                    { id: "xii_9_1", title: "Energy Bands in Solids", v: ["aapvd-T6c14", "4L8AlRkUrt4"], p: "1fM0TC_-2IL_0xt_ODWmcdPUSVjlbOEID" },
+                    { id: "xii_9_2", title: "Intrinsic & Extrinsic Semiconductors", v: ["_S0cRrRaGVI"], p: "1nfGhTAF1YdAhR5IbgN_egzSFpoy4XiQI" },
+                    { id: "xii_9_3", title: "p-n Junction", v: ["Cb4odKuC0rw", "tbPyZ_9WKTU"], p: "15726-VAXGDQHUVdsP6qLkaMwaVW8HKIV" },
+                    { id: "xii_9_4", title: "Diode as a Rectifier", v: ["lf2d44azKxI"], p: "12WYI5n1-KBESV6-dl4AnchdKc3FrNfLy" },
+                    { id: "xii_9_5", title: "Experiments with Diodes", v: [], p: "1ZAJ2tpmVhWDvZIx-YPcxGzlnvZPH9zQ0" },
+                    { id: "xii_9_6", title: "Zener Diode", v: [], p: "1BjcVwyYz2UYnW5zO8dR2IUfWBz00i07A" },
+                    { id: "xii_9_7", title: "Junction Transistor", v: ["ctb1PJLdAHw"], p: "1nj-XS_8Of9Jx1VGf85i6FFly7mtUzTf1" },
+                    { id: "xii_9_8", title: "Application of Transistors", v: ["j1rz7RkklXY"], p: "18NLZyCdOdwK1kdsPDp6AgkZmqOIE9cW2" },
+                    { id: "xii_9_9", title: "Common Emitter Amplifier", v: ["7rrjioGCPU8"], p: "1-vz65TmU2g7xPck6z0cbeldBxJQAfjZs" },
+                    { id: "xii_9_10", title: "Digital Electronics & Logic Gates", v: [], p: "1j4M7d9mbCBJwZO_JoesFvC54pOY0rzMG" },
+                    { id: "xii_9_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["8luE9L8bj4Y", "l0nvIh34eug", "hTPIiC70WCg", "vnQ4uovIwR8", "ptUPen8U5yE", "P11paY2vACc", "ijNBnXhiy_w", "oXY9zUSulkg"] }
+                ],
+                "Unit 10: Communication": [
+                    { id: "xii_10_1", title: "Intro to Communication", v: [], p: "183ht0tg1S5HSM9YTfe-0UbMqk1e_hzPr" },
+                    { id: "xii_10_2", title: "Propagation of EM Waves", v: [], p: "1PZa4CV4x2THmJdCkTLdYUg8Ker-ZCamP" },
+                    { id: "xii_10_3", title: "Modulation", v: [], p: "1xBzW3MitXYJul792jUojPpHlF3itu_TY" },
+                    { id: "xii_10_4", title: "Amplitude Modulation", v: [], p: "1uups1Ua8Q36oUdVYwPPbsr79jOjMNPdL" },
+                    { id: "xii_10_5", title: "Short Range Communication", v: [], p: "1Sjnnk7S5TXlynRkC_0ezYdAUooIJ1UnJ" },
+                    { id: "xii_10_6", title: "Modern Day Communication", v: [], p: "1708edkJO37uuFEscPjFHODuWNkTB2pb2" },
+                    { id: "xii_10_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["vo-1SZaOTgk", "xxI7Kuc_N2A"] }
+                ]
+            }
+        };
+
+        // --- RENDER SIDEBAR ---
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar-content');
+            let html = '';
+
+            for (const [className, units] of Object.entries(syllabusData)) {
+                html += `<div class="nav-header">${className}</div>`;
+                
+                for (const [unitName, modules] of Object.entries(units)) {
+                    html += `
+                    <details id="details-${unitName.replace(/[^a-zA-Z0-9]/g, '')}">
+                        <summary>${unitName}</summary>
+                        <ul class="module-list">
+                            ${modules.map(mod => `
+                                <li>
+                                    <a onclick="loadModule('${mod.id}')" id="link_${mod.id}" data-id="${mod.id}" data-class="${className}" data-unit="${unitName}" class="${mod.type === 'pal' ? 'pal-link' : ''}">
+                                        ${mod.title}
+                                    </a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </details>`;
+                }
+            }
+            sidebar.innerHTML = html;
+        }
+
+        // --- LOAD CONTENT ---
+        function loadModule(moduleId) {
+            // Find module in data
+            let module, unitName, className;
+            outerLoop:
+            for (const [cName, units] of Object.entries(syllabusData)) {
+                for (const [uName, mods] of Object.entries(units)) {
+                    const found = mods.find(m => m.id === moduleId);
+                    if (found) {
+                        module = found;
+                        unitName = uName;
+                        className = cName;
+                        break outerLoop;
+                    }
+                }
+            }
+
+            if (!module) return;
+
+            // Update UI
+            document.getElementById('module-title').innerText = module.title;
+            document.getElementById('breadcrumb-active').innerText = `${className} / ${module.title}`;
+            
+            const container = document.getElementById('dynamic-content');
+            container.innerHTML = '';
+
+            // Handle IIT PAL Special View
+            if (module.type === 'pal') {
+                container.innerHTML = `<div class="pal-card">
+                    <div class="pal-header">🎓 IIT-PAL / Exam Preparation Playlist</div>
+                    <p>These videos are curated from the IIT-PAL initiative for competitive exam preparation (JEE/NEET).</p>
+                </div>`;
+                
+                module.v.forEach((vidId, idx) => {
+                    container.innerHTML += `
+                        <div class="resource-card">
+                            <h3 id="vid-${idx}">📺 IIT-PAL Lecture ${idx + 1}</h3>
+                            <div class="video-box">
+                                <iframe src="https://www.youtube-nocookie.com/embed/${vidId}" 
+                                        allowfullscreen 
+                                        referrerpolicy="strict-origin-when-cross-origin">
+                                </iframe>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                // Standard Module View
+                
+                // Videos
+                if (module.v.length > 0) {
+                    module.v.forEach((vidId, idx) => {
+                        container.innerHTML += `
+                            <div class="resource-card">
+                                <h3 id="vid-${idx}">📺 Video Lecture ${module.v.length > 1 ? idx + 1 : ''}</h3>
+                                <div class="video-box">
+                                    <iframe src="https://www.youtube-nocookie.com/embed/${vidId}" 
+                                            allowfullscreen 
+                                            referrerpolicy="strict-origin-when-cross-origin">
+                                    </iframe>
+                                </div>
+                            </div>`;
+                    });
+                } else {
+                    container.innerHTML += `<div class="resource-card"><h3>📺 Video Lecture</h3><p style="color:var(--text-muted); font-style:italic;">No video available for this topic.</p></div>`;
+                }
+
+                // PDF
+                if (module.p) {
+                    container.innerHTML += `
+                        <div class="resource-card">
+                            <h3 id="notes">📄 Study Notes</h3>
+                            <div class="pdf-container">
+                                <iframe class="pdf-box" src="https://drive.google.com/file/d/${module.p}/preview"></iframe>
+                                <a href="https://drive.google.com/file/d/${module.p}/view" target="_blank" class="drive-btn">
+                                    ↗️ Open PDF in New Tab
+                                </a>
+                            </div>
+                        </div>`;
+                } else {
+                    container.innerHTML += `<div class="resource-card"><h3>📄 Study Notes</h3><p style="color:var(--text-muted); font-style:italic;">No notes available for this topic.</p></div>`;
+                }
+            }
+
+            // Highlight Link
+            document.querySelectorAll('.module-list a').forEach(el => el.classList.remove('active'));
+            const activeLink = document.getElementById('link_' + moduleId);
+            if(activeLink) activeLink.classList.add('active');
+
+            // Generate TOC
+            generateTOC();
+            document.getElementById('main-content').scrollTop = 0;
+        }
+
+        function generateTOC() {
+            const tocList = document.getElementById('toc-list');
+            tocList.innerHTML = '';
+            document.querySelectorAll('#dynamic-content h3').forEach(heading => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${heading.id}`;
+                a.innerText = heading.innerText.replace('📺 ', '').replace('📄 ', '');
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    document.getElementById(heading.id).scrollIntoView({ behavior: 'smooth' });
+                };
+                li.appendChild(a);
+                tocList.appendChild(li);
+            });
+        }
+
+        // --- SEARCH ---
+        function deepSearch() {
+            let input = document.getElementById('moduleSearch').value.toLowerCase();
+            const allLinks = document.querySelectorAll('.module-list a');
+
+            allLinks.forEach(link => {
+                const text = link.innerText.toLowerCase();
+                const parentDetails = link.closest('details');
+                
+                if (text.includes(input)) {
+                    link.parentElement.style.display = "";
+                    if (input.length > 0) parentDetails.open = true; // Auto-expand
+                } else {
+                    link.parentElement.style.display = "none";
+                }
+            });
+        }
+
+        // --- THEME ---
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+        }
+
+        // Init
+        renderSidebar();
+        // Load first available module
+        window.onload = () => loadModule('xi_1_1');
+
+    </script>
+</body>
+</html>
