@@ -14,8 +14,10 @@
             --border-color: rgba(55, 53, 47, 0.09);
             --hover-bg: #efefed;
             --accent: #2383e2;
+            --accent-subtle: rgba(35, 131, 226, 0.1);
             --card-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            --pal-bg: #e3f2fd; /* Light blue for PAL cards */
+            --pal-bg: #e3f2fd;
+            --success: #0f9f6e;
         }
 
         [data-theme="dark"] {
@@ -26,169 +28,320 @@
             --border-color: rgba(255, 255, 255, 0.1);
             --hover-bg: #2c2c2c;
             --accent: #4ea8ff;
+            --accent-subtle: rgba(78, 168, 255, 0.1);
             --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
             --pal-bg: #1e2a38;
+            --success: #34d399;
         }
+
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             margin: 0; display: flex; flex-direction: column; height: 100vh;
             color: var(--text-main); background: var(--bg-color); overflow: hidden;
-            transition: background 0.2s, color 0.2s;
+            transition: background 0.25s, color 0.25s;
         }
 
         /* --- HEADER --- */
         header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; height: 45px; font-size: 14px;
+            padding: 0 16px; height: 45px; font-size: 14px;
             border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-            background: var(--bg-color);
+            background: var(--bg-color); z-index: 100; gap: 10px;
         }
-        .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
-        .breadcrumb b { color: var(--text-main); }
-        
+
+        .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+        .hamburger {
+            display: none; background: none; border: none; cursor: pointer;
+            padding: 4px 6px; border-radius: 4px; color: var(--text-main);
+            font-size: 18px; line-height: 1; flex-shrink: 0;
+        }
+        .hamburger:hover { background: var(--hover-bg); }
+
+        .breadcrumb {
+            display: flex; align-items: center; gap: 6px;
+            color: var(--text-muted); white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; min-width: 0;
+        }
+        .breadcrumb b {
+            color: var(--text-main); overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        .breadcrumb span { flex-shrink: 0; }
+
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
         .theme-toggle {
-            background: none; border: 1px solid var(--border-color); cursor: pointer; font-size: 13px;
-            padding: 4px 10px; border-radius: 4px; color: var(--text-main); transition: 0.2s;
+            background: none; border: 1px solid var(--border-color); cursor: pointer;
+            font-size: 13px; padding: 4px 10px; border-radius: 4px;
+            color: var(--text-main); transition: background 0.2s; white-space: nowrap;
         }
         .theme-toggle:hover { background: var(--hover-bg); }
 
-        .wrapper { display: flex; flex: 1; overflow: hidden; }
+        .wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
 
         /* --- LEFT SIDEBAR --- */
         nav.left-sidebar {
             width: 280px; background: var(--sidebar-bg); padding: 10px;
             overflow-y: auto; flex-shrink: 0; border-right: 1px solid var(--border-color);
+            transition: transform 0.25s ease;
         }
 
+        /* Search wrapper with clear button */
+        .search-wrapper { position: relative; margin-bottom: 14px; }
         .side-search {
             width: 100%; background: var(--bg-color); border: 1px solid var(--border-color);
-            color: var(--text-main); padding: 8px 12px; border-radius: 4px;
-            margin-bottom: 15px; font-size: 13px; outline: none; box-sizing: border-box;
+            color: var(--text-main); padding: 7px 32px 7px 12px; border-radius: 6px;
+            font-size: 13px; outline: none; transition: border-color 0.15s;
         }
-        .side-search:focus { border-color: var(--accent); }
+        .side-search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-subtle); }
+        .search-clear {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+            font-size: 14px; padding: 2px; display: none; line-height: 1;
+            border-radius: 50%; width: 18px; height: 18px; align-items: center; justify-content: center;
+        }
+        .search-clear:hover { background: var(--hover-bg); color: var(--text-main); }
+        .search-clear.visible { display: flex; }
+
+        .search-hint {
+            font-size: 11px; color: var(--text-muted); text-align: center;
+            margin-top: 4px; opacity: 0.8;
+        }
+        .no-results {
+            text-align: center; color: var(--text-muted); font-size: 13px;
+            padding: 20px 10px; display: none;
+        }
+        .no-results.visible { display: block; }
 
         .nav-header {
-            font-size: 12px; font-weight: 700; color: var(--text-muted);
-            text-transform: uppercase; margin: 25px 0 8px 5px; letter-spacing: 0.5px;
+            font-size: 11px; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; margin: 22px 0 7px 5px; letter-spacing: 0.6px;
             border-bottom: 1px solid var(--border-color); padding-bottom: 5px;
         }
 
         /* Collapsible Units */
-        details { margin-bottom: 5px; }
+        details { margin-bottom: 3px; }
         summary {
             font-size: 13px; font-weight: 600; color: var(--text-muted);
             padding: 6px 8px; cursor: pointer; list-style: none; border-radius: 4px;
-            display: flex; align-items: center; gap: 6px;
+            display: flex; align-items: center; gap: 6px; user-select: none;
         }
         summary:hover { background: var(--hover-bg); color: var(--text-main); }
-        summary::before { content: "▶"; font-size: 9px; transition: transform 0.2s; }
+        summary::before { content: "▶"; font-size: 9px; transition: transform 0.2s; flex-shrink: 0; }
         details[open] summary::before { transform: rotate(90deg); }
-        details[open] summary { margin-bottom: 5px; }
+        details[open] summary { margin-bottom: 3px; }
 
         .module-list { list-style: none; padding: 0; margin: 0; padding-left: 10px; }
         .module-list li { margin-bottom: 1px; }
         .module-list a {
             display: flex; align-items: center; padding: 5px 10px; color: var(--text-main);
-            text-decoration: none; font-size: 13.5px; border-radius: 4px;
-            cursor: pointer; transition: 0.1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-decoration: none; font-size: 13px; border-radius: 4px;
+            cursor: pointer; transition: background 0.1s; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
         }
         .module-list a:hover { background: var(--hover-bg); }
-        .module-list a.active { background: var(--hover-bg); font-weight: 600; color: var(--accent); }
-        /* Icon for regular modules */
-        .module-list a::before { content: "📄"; font-size: 10px; margin-right: 8px; opacity: 0.7; }
-        /* Icon for IIT-PAL modules (target via class in JS) */
-        .module-list a.pal-link::before { content: "🎓"; font-size: 12px; margin-right: 8px; opacity: 1; }
-        .module-list a.pal-link { color: var(--text-main); font-weight: 500; }
+        .module-list a.active {
+            background: var(--accent-subtle); font-weight: 600;
+            color: var(--accent); border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+        .module-list a::before { content: "📄"; font-size: 10px; margin-right: 8px; opacity: 0.65; flex-shrink: 0; }
+        .module-list a.pal-link::before { content: "🎓"; font-size: 12px; opacity: 1; }
+        .module-list a.pal-link { font-weight: 500; }
+
+        /* --- SIDEBAR OVERLAY (mobile) --- */
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            z-index: 99; backdrop-filter: blur(2px);
+        }
 
         /* --- MAIN CONTENT --- */
-        main { flex: 1; overflow-y: auto; scroll-behavior: smooth; background: var(--bg-color); }
-        .content-area { max-width: 850px; margin: 0 auto; padding: 60px 50px; }
-        
-        h1 { font-size: 38px; font-weight: 700; margin: 0 0 30px 0; letter-spacing: -0.5px; color: var(--text-main); }
+        main {
+            flex: 1; overflow-y: auto; scroll-behavior: smooth;
+            background: var(--bg-color); position: relative;
+        }
+        .content-area { max-width: 850px; margin: 0 auto; padding: 55px 50px 80px; }
 
-        .resource-card { margin-top: 40px; }
-        .resource-card h3 { 
-            font-size: 20px; margin-bottom: 15px; padding-bottom: 8px;
+        /* Welcome screen */
+        .welcome-screen { text-align: center; padding: 80px 40px 40px; }
+        .welcome-screen .logo { font-size: 52px; margin-bottom: 16px; }
+        .welcome-screen h1 { font-size: 32px; font-weight: 700; margin: 0 0 12px; }
+        .welcome-screen p { color: var(--text-muted); font-size: 15px; max-width: 400px; margin: 0 auto 32px; line-height: 1.6; }
+        .stats-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+        .stat-box {
+            background: var(--sidebar-bg); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 16px 24px; text-align: center; min-width: 100px;
+        }
+        .stat-box .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+        .stat-box .lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .welcome-hint {
+            margin-top: 40px; font-size: 13px; color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .kbd {
+            background: var(--hover-bg); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 2px 6px; font-size: 11px; font-family: monospace;
+        }
+
+        h1 { font-size: 36px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.5px; color: var(--text-main); }
+        .module-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 30px; }
+
+        .resource-card { margin-top: 38px; }
+        .resource-card h3 {
+            font-size: 19px; margin-bottom: 14px; padding-bottom: 8px;
             border-bottom: 1px solid var(--border-color); scroll-margin-top: 20px;
             color: var(--text-main); display: flex; align-items: center; gap: 10px;
         }
 
-        .video-box { 
-            background: #000; border-radius: 6px; overflow: hidden; position: relative; 
+        .video-box {
+            background: #000; border-radius: 8px; overflow: hidden; position: relative;
             padding-bottom: 56.25%; height: 0; margin-bottom: 15px;
             box-shadow: var(--card-shadow);
         }
         .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        
+
         .pdf-container { margin-bottom: 25px; }
-        .pdf-box { width: 100%; height: 600px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; }
-        
+        .pdf-box {
+            width: 100%; height: 600px; border: 1px solid var(--border-color);
+            border-radius: 8px; background: #fff;
+        }
+
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
         .drive-btn {
-            display: inline-block; margin-top: 8px; padding: 6px 12px; 
-            background: var(--bg-color); border: 1px solid var(--border-color); 
-            border-radius: 4px; color: var(--text-main); text-decoration: none; 
-            font-size: 12px; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 12px; background: var(--bg-color);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            color: var(--text-main); text-decoration: none;
+            font-size: 12px; transition: background 0.15s, border-color 0.15s;
         }
-        .drive-btn:hover { background: var(--hover-bg); }
+        .drive-btn:hover { background: var(--hover-bg); border-color: var(--accent); }
 
-        /* IIT PAL Special Styling */
+        .unavailable {
+            color: var(--text-muted); font-style: italic; font-size: 14px;
+            padding: 14px 0; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* IIT PAL */
         .pal-card {
-            background-color: var(--pal-bg);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            border: 1px solid var(--border-color);
+            background: var(--pal-bg); padding: 18px 20px; border-radius: 10px;
+            margin-bottom: 28px; border: 1px solid var(--border-color);
         }
-        .pal-header { color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 15px; }
+        .pal-header { color: var(--accent); font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+        .pal-card p { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
 
-        /* --- RIGHT SIDEBAR --- */
+        /* --- RIGHT SIDEBAR / TOC --- */
         .right-sidebar {
-            width: 220px; padding: 65px 20px; flex-shrink: 0;
+            width: 210px; padding: 60px 18px; flex-shrink: 0;
             border-left: 1px solid var(--border-color); background: var(--bg-color);
+            overflow-y: auto;
         }
-        .right-sidebar h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; }
-        
-        #toc-list { list-style: none; padding: 0; margin: 0; }
-        #toc-list li { margin-bottom: 8px; }
-        #toc-list a { color: var(--text-muted); text-decoration: none; font-size: 13px; line-height: 1.4; display: block; transition: 0.2s; }
-        #toc-list a:hover { color: var(--text-main); transform: translateX(3px); }
+        .right-sidebar h4 {
+            font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+            margin: 0 0 14px; letter-spacing: 0.5px;
+        }
 
+        #toc-list { list-style: none; padding: 0; margin: 0; }
+        #toc-list li { margin-bottom: 6px; }
+        #toc-list a {
+            color: var(--text-muted); text-decoration: none; font-size: 12.5px;
+            line-height: 1.4; display: block; transition: color 0.15s, transform 0.15s;
+            padding: 2px 0 2px 8px; border-left: 2px solid transparent; border-radius: 1px;
+        }
+        #toc-list a:hover { color: var(--text-main); }
+        #toc-list a.toc-active {
+            color: var(--accent); border-left-color: var(--accent); font-weight: 500;
+        }
+
+        /* --- BACK TO TOP BUTTON --- */
+        #back-to-top {
+            position: fixed; bottom: 28px; right: 28px; width: 38px; height: 38px;
+            background: var(--accent); color: #fff; border: none; border-radius: 50%;
+            cursor: pointer; font-size: 16px; display: flex; align-items: center;
+            justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+            z-index: 50;
+        }
+        #back-to-top.visible { opacity: 1; pointer-events: auto; }
+        #back-to-top:hover { transform: translateY(-2px); }
+
+        /* --- RESPONSIVE --- */
         @media (max-width: 1100px) { .right-sidebar { display: none; } }
-        @media (max-width: 768px) { nav.left-sidebar { display: none; } }
+        @media (max-width: 768px) {
+            .hamburger { display: flex; align-items: center; justify-content: center; }
+            nav.left-sidebar {
+                position: fixed; top: 45px; left: 0; bottom: 0; z-index: 100;
+                transform: translateX(-100%); box-shadow: 2px 0 16px rgba(0,0,0,0.1);
+                transition: transform 0.25s ease;
+            }
+            nav.left-sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.open { display: block; }
+            .content-area { padding: 30px 20px 60px; }
+            h1 { font-size: 26px; }
+            .welcome-screen { padding: 50px 20px 30px; }
+            #back-to-top { bottom: 16px; right: 16px; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="breadcrumb">
-            🏠 Portal <span>/</span> <b id="breadcrumb-active">Welcome</b>
+        <div class="header-left">
+            <button class="hamburger" id="hamburger-btn" aria-label="Toggle sidebar" aria-expanded="false">☰</button>
+            <div class="breadcrumb" aria-label="Breadcrumb">
+                🏠 <span>/</span> <b id="breadcrumb-active">Welcome</b>
+            </div>
         </div>
-        <button class="theme-toggle" onclick="toggleTheme()">🌗 Dark Mode</button>
+        <div class="header-actions">
+            <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">🌙 Dark</button>
+        </div>
     </header>
 
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <div class="wrapper">
-        <nav class="left-sidebar">
-            <input type="text" id="moduleSearch" class="side-search" placeholder="Search title or content..." onkeyup="deepSearch()">
+        <nav class="left-sidebar" id="left-sidebar" aria-label="Course navigation">
+            <div class="search-wrapper">
+                <input type="text" id="moduleSearch" class="side-search"
+                    placeholder="Search modules… (⌘K)" aria-label="Search modules"
+                    onkeyup="deepSearch()" oninput="onSearchInput()">
+                <button class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Clear search">✕</button>
+            </div>
+            <div class="no-results" id="no-results">No modules found.</div>
             <div id="sidebar-content"></div>
         </nav>
 
-        <main id="main-content">
-            <div class="content-area">
-                <h1 id="module-title">Physics Portal</h1>
+        <main id="main-content" role="main">
+            <div class="content-area" id="content-area">
+                <!-- Welcome screen shown initially -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="logo">⚛️</div>
+                    <h1>Physics Portal</h1>
+                    <p>Your complete study companion for Class XI & XII Physics — lectures, notes, and IIT-PAL resources in one place.</p>
+                    <div class="stats-row" id="portal-stats"></div>
+                    <div class="welcome-hint">
+                        <span>Press <kbd class="kbd">⌘K</kbd> or <kbd class="kbd">Ctrl K</kbd> to search modules</span>
+                    </div>
+                </div>
+
+                <h1 id="module-title" style="display:none;"></h1>
+                <div class="module-meta" id="module-meta"></div>
                 <div id="dynamic-content"></div>
             </div>
         </main>
 
-        <aside class="right-sidebar">
-            <h4>Table of Contents</h4>
+        <aside class="right-sidebar" aria-label="Table of contents">
+            <h4>On This Page</h4>
             <ul id="toc-list"></ul>
         </aside>
     </div>
 
+    <button id="back-to-top" onclick="scrollToTop()" aria-label="Back to top" title="Back to top">↑</button>
+
     <script>
-        // --- DATA STRUCTURE ---
-        // Each Unit has a "pal" entry for the IIT-PAL playlist
+        // ─── DATA ────────────────────────────────────────────────────────────────
         const syllabusData = {
             "Class XI": {
                 "Unit 1: Physical World & Measurement": [
@@ -212,9 +365,9 @@
                     { id: "xi_2_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["Z63Ch4W6PMM", "AfMbfSkydKA", "bqo3lFQfNOw", "O7kTOkri4AE", "rYCipFGjzXI", "AtSJDA8TxQM", "drtdGg89Psw", "_JNGmr6onlg"] }
                 ],
                 "Unit 3: Laws of Motion": [
-                    { id: "xi_3_1", title: "Newton’s First Law", v: ["zciJSvBV208"], p: "1vevu06nqt7dlupcKO0REyGGMJLsS0uR6" },
-                    { id: "xi_3_2", title: "Newton’s Second Law", v: ["V3PpbOy7Tzc"], p: "1nvUtW24tI0bjDX4LBUWJ_r0XM8ucFrE7" },
-                    { id: "xi_3_3", title: "Newton’s Third Law", v: ["Tgj0SQsi3hU"], p: "1ljiI42OfVh0FfeHhLtaR4xD0YH4KZ5D0" },
+                    { id: "xi_3_1", title: "Newton's First Law", v: ["zciJSvBV208"], p: "1vevu06nqt7dlupcKO0REyGGMJLsS0uR6" },
+                    { id: "xi_3_2", title: "Newton's Second Law", v: ["V3PpbOy7Tzc"], p: "1nvUtW24tI0bjDX4LBUWJ_r0XM8ucFrE7" },
+                    { id: "xi_3_3", title: "Newton's Third Law", v: ["Tgj0SQsi3hU"], p: "1ljiI42OfVh0FfeHhLtaR4xD0YH4KZ5D0" },
                     { id: "xi_3_4", title: "Types of Forces", v: ["Pt0vocV_7nw"], p: "14-tOBb4DE1A3YwgvAqGIGcoB4Gu3eHXn" },
                     { id: "xi_3_5", title: "Friction", v: ["ozF5daapfsw", "8928ST__gtw"], p: "1QQNzPsvTUaP65SGsrg4_DDQ9xdeGv97W" },
                     { id: "xi_3_6", title: "Circular Motion & Banking", v: ["Zt0OM98GGbY", "QKzzYlC2SSw"], p: "1WO7oYrIsMTDUJP-W41wwwu6utQ75rMLL" },
@@ -244,7 +397,7 @@
                     { id: "xi_5_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["ZFEExw-qUSk", "Jtud5iwTd_I", "vIz8kJojyi0", "kmSTigu8nCQ", "mgjHS5SzmeE", "prAZFFMs34k", "zD3Le2jhaTE", "kfoA6HJ0qCc", "uWNE8VSv43o", "HASWu-YFmSM"] }
                 ],
                 "Unit 6: Gravitation": [
-                    { id: "xi_6_1", title: "Kepler’s Laws", v: ["XsyK8XHV12A"], p: "1z-TWzmAyyNs_6qnRY0t2nPWsEuSPgO7f" },
+                    { id: "xi_6_1", title: "Kepler's Laws", v: ["XsyK8XHV12A"], p: "1z-TWzmAyyNs_6qnRY0t2nPWsEuSPgO7f" },
                     { id: "xi_6_2", title: "Gravitational Force", v: ["fN9m4ggOpKo"], p: "" },
                     { id: "xi_6_3", title: "Acceleration Due to Gravity", v: ["NRATRK0eCB4"], p: "17-QsrhcID2tuiZTeNdG7OwkvWaEQHfgY" },
                     { id: "xi_6_4", title: "Gravitational Potential", v: [], p: "1l_wkwsELK9m1YyqCHt43D_WtpGqBubMZ" },
@@ -255,20 +408,20 @@
                 "Unit 7: Bulk Properties": [
                     { id: "xi_7_1", title: "Bulk Properties of Matter", v: ["l7tAILhx40M"], p: "1niBzsW0ad3ognXqVhSVNcgTR8DWT6PLN" },
                     { id: "xi_7_2", title: "Elastic Behaviour", v: [], p: "17ChO0NfcK3W4YEuu6UJWU4crdVa2Egwq" },
-                    { id: "xi_7_3", title: "Searle’s Apparatus", v: ["tZ-gAGoBrKM", "0maHQNr4GLQ"], p: "1s5QwCz5ZfaOveZRdcokt-ZYeOvQE1BCC" },
+                    { id: "xi_7_3", title: "Searle's Apparatus", v: ["tZ-gAGoBrKM", "0maHQNr4GLQ"], p: "1s5QwCz5ZfaOveZRdcokt-ZYeOvQE1BCC" },
                     { id: "xi_7_4", title: "Bulk Modulus", v: ["hJXXaNEq2E8"], p: "1joskstDiwcl9aYSYbgZ9VVx_NsVaQzQw" },
                     { id: "xi_7_5", title: "Modulus of Rigidity", v: [], p: "1Dcgn9WufIh1JrOKjXCrBgmDSGGlxqH3d" },
                     { id: "xi_7_6", title: "Fluid Pressure", v: ["6FOvF4mnxPo"], p: "17EKg2lYa4AojrkSdi93lGHjGkEB5CDJM" },
                     { id: "xi_7_7", title: "Viscosity", v: ["bIYBHtoY11E", "wnAmnDk59j0", "grB3XyUPUIQ"], p: "1fI7NgN44DJ6P8tTyXbjFaP9xzmTBsNR_" },
                     { id: "xi_7_8", title: "Fluid Flow", v: ["IRbNlT7mVnc"], p: "1mOL83OimPNIm57g8_lmR4RG9Pkr9qyHH" },
-                    { id: "xi_7_9", title: "Bernoulli’s Principle", v: ["gv1_WbPJTTM", "FFN0CegWagU"], p: "1L5WATVOMwfxt4-iFAVlD2VngfCP1Yw5E" },
+                    { id: "xi_7_9", title: "Bernoulli's Principle", v: ["gv1_WbPJTTM", "FFN0CegWagU"], p: "1L5WATVOMwfxt4-iFAVlD2VngfCP1Yw5E" },
                     { id: "xi_7_10", title: "Surface Tension", v: ["_OwQxZyaw1w"], p: "1K9rWhvX84Znnij4jZkxoMmIoTIz_Z8wz" },
                     { id: "xi_7_11", title: "Effects of Surface Tension", v: ["1qqRBY2-bgo"], p: "1orHpOg_i083b9rmcxrDRb7ZVGYFVs2Bq" },
                     { id: "xi_7_12", title: "Thermal Energy", v: ["rAeENiKLZFE"], p: "1APcIQDzEeiTCpuyB3XvCfqD1KTX2zuxh" },
                     { id: "xi_7_13", title: "Thermal Expansion", v: [], p: "1VKY2k2cPQH0QGBVhbRHI263mTb8_M27u" },
                     { id: "xi_7_14", title: "Specific Heat", v: [], p: "1D1PqhSNOZnZUYrriRzhjaNuTXXsb8-U-" },
                     { id: "xi_7_15", title: "Change of State", v: [], p: "1B6Aw6HLJjyjkJzdohd-d6nitfXy4v4pf" },
-                    { id: "xi_7_16", title: "Heat Transfer", v: [], p: "1NZ8TPDXtdRGxYD1sA-p-2cXpMBYGYkXT" },
+                    { id: "xi_7_16", title: "Heat Transfer", v: [], p: "1NZ8TPDXtdRGxYD1sA-p-2cXpGYkXT" },
                     { id: "xi_7_17", title: "Radiation", v: ["ZkPL95reJTg"], p: "1XVcXKzrK-bwznanLrwlB2hCnwwboUomw" },
                     { id: "xi_7_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["hMV2mGo8HDo", "byxgVpwcBC8", "yWOCj6yP-bk", "dQNvD4D5g4c", "enB3li7t2Ck", "_0GF5VZ9-7s", "ZI-KNqoyw4Y", "Uz-7VxPPQdg", "DPK1z3QSY_8", "QLL-spqasio", "pChNdnkp0dQ"] }
                 ],
@@ -303,7 +456,7 @@
                     { id: "xi_10_12", title: "Standing Waves in Strings", v: ["syAQ0L8Atx8"], p: "1DxIk12eqGVSip_v34AhljVp75I0E6tZi" },
                     { id: "xi_10_13", title: "Standing Waves in Pipes", v: [], p: "10jPwFs7yJ9LAdZI7zgOcCwv-6qN1sW3L" },
                     { id: "xi_10_14", title: "Beats", v: ["uo-8aemA07w", "ShyhmM3mxHo"], p: "1dc-u65lfs27D7I9Ue0r7POTabRL4ifXw" },
-                    { id: "xi_10_15", title: "Doppler’s Effect", v: ["Qc05URyRVHI"], p: "1Di9mdadXgbIWo_sTsi6YRWsitNe9RCut" },
+                    { id: "xi_10_15", title: "Doppler's Effect", v: ["Qc05URyRVHI"], p: "1Di9mdadXgbIWo_sTsi6YRWsitNe9RCut" },
                     { id: "xi_10_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["0IUFKqSOQno", "kc3HUEv4FF0", "Kej7ztES5aw", "165Gffi7gY4", "BpsUVGOkJbQ", "Rq3E1RTDbHc", "kqG0571FcTc", "nrJrV_Gn_Cw", "IR7WluF3WQE", "Ks4kJGWhi-8"] }
                 ]
             },
@@ -327,7 +480,7 @@
                     { id: "xii_2_2", title: "Resistance & Resistivity", v: ["RFIHeSsu7MQ", "4-GxinG7AVw"], p: "1Gn5zCjGTJ2x0eLRXRx20QsdpSOCDWviP" },
                     { id: "xii_2_3", title: "Combination of Resistances", v: ["vUzYsfGTM2I"], p: "13SpoBgQuCtQG2MRrDdw-eKNNZP6KEJfv" },
                     { id: "xii_2_4", title: "Internal Resistance of Cell", v: ["bribXH2eg20", "AfOip2gLd38"], p: "1zMKqvs31SklyeFGeuUGlmtFWbcSOJfTS" },
-                    { id: "xii_2_5", title: "Kirchhoff’s Rules", v: ["zWmJI-w0nUU", "KCBx9l1lrp4"], p: "1lpUJZh34Ppbp1J-CHYBmiqXu8Af0Ey6P" },
+                    { id: "xii_2_5", title: "Kirchhoff's Rules", v: ["zWmJI-w0nUU", "KCBx9l1lrp4"], p: "1lpUJZh34Ppbp1J-CHYBmiqXu8Af0Ey6P" },
                     { id: "xii_2_6", title: "Wheatstone & Meter Bridge", v: ["iDd0QsoLZ8I", "Xz0plg0--hI", "8tc4IK5Rdq8", "DiPTFfoSUhk"], p: "1aWVOYzDIa0lYwLK2ft3jzXdGgQggTZWQ" },
                     { id: "xii_2_7", title: "Potentiometer", v: ["DiPTFfoSUhk", "CuDuFqdiFoM"], p: "1wWCx3FjIdZ5UPJjOxCgehGRhk6qfmbxr" },
                     { id: "xii_2_8", title: "Electrical Energy & Power", v: [], p: "1B1tdD7OYSe9qPFi3yn5SGBytiftxzlFl" },
@@ -343,12 +496,12 @@
                     { id: "xii_3_7", title: "Moving Coil Galvanometer", v: ["sBuD5_dhX_4"], p: "1gua48nkJglh4XQU2kJApGLFsTySQ2zFc" },
                     { id: "xii_3_8", title: "Magnetic Dipole Moment", v: ["UdZUVahZVZw", "EofgB-6CMhg"], p: "1EA8zH91YvsADu8fv77VwX1_ZgwlaZlU2" },
                     { id: "xii_3_9", title: "Classification of Magnets", v: ["Y9S15W-gKyU"], p: "1B0ek_OWIlWIjG_MzDlFCtchjzxrX6YNY" },
-                    { id: "xii_3_10", title: "Earth’s Magnetism", v: ["XA-UdxQM-SE"], p: "1EONPVcPU4MXx5FhFe3FwFKiW0z1uNkUD" },
+                    { id: "xii_3_10", title: "Earth's Magnetism", v: ["XA-UdxQM-SE"], p: "1EONPVcPU4MXx5FhFe3FwFKiW0z1uNkUD" },
                     { id: "xii_3_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["GWsg0YpO0T8", "DdeAZYh55lg", "h6t_KcFazQM", "5Uqt3Igj_Uc", "Y6ngDf_f-O4", "4HW3uOWOz20", "KvDLYnpSzfE", "yWa_2P6CDpw", "whAztOMIwLU", "kuItyLPr36Y"] }
                 ],
                 "Unit 4: EMI & AC": [
                     { id: "xii_4_1", title: "Electromagnetic Induction", v: ["RGUF2BhaYxI", "U8-bWMdWCGs"], p: "1-_Qr0ZjkKSUrxtm95Arwtwg59Y90E6OE" },
-                    { id: "xii_4_2", title: "Lenz’s Law & Motional EMF", v: ["i9yeqWXt29M"], p: "1cfoa3rW_4WPg4hlINpl8YRl2Xw3KlmhW" },
+                    { id: "xii_4_2", title: "Lenz's Law & Motional EMF", v: ["i9yeqWXt29M"], p: "1cfoa3rW_4WPg4hlINpl8YRl2Xw3KlmhW" },
                     { id: "xii_4_3", title: "Eddy Currents", v: ["gsG3neiRars"], p: "19L3pygXW9qEUnqSyf9POiaxDYCVthiN2" },
                     { id: "xii_4_4", title: "Alternating Current", v: ["_BsAazf7YqQ"], p: "1CyuQRhpWJ6cyG-fMMewVl3Pv0-U9gE8p" },
                     { id: "xii_4_5", title: "Components of AC circuit", v: ["f0_Ud2qkV7k"], p: "1VG5JfW2PkOZc0sFXnuXHlzwBUChLPqPZ" },
@@ -359,7 +512,7 @@
                     { id: "xii_4_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["XT-UmPviH64", "RKNBCeXATa8", "QfAr7RNIRPA", "PuxtW2-Fa8s", "cVKgO87gqO8", "BCLOMBCTzrw", "ADA9OCSp7ME", "Qkp0yRUHe2w", "LhQ5vQ7lFzk", "3Art7m638CU", "ATPZ_mtVpDk", "j4cxcVNRrM8", "ecuZP6IljDQ"] }
                 ],
                 "Unit 5: EM Waves": [
-                    { id: "xii_5_1", title: "Maxwell’s Equations", v: [], p: "1yjvrqwztlgQFHXcQoOi3iq-YSVEjf2BD" },
+                    { id: "xii_5_1", title: "Maxwell's Equations", v: [], p: "1yjvrqwztlgQFHXcQoOi3iq-YSVEjf2BD" },
                     { id: "xii_5_2", title: "EM Spectrum & Uses", v: [], p: "12qEU9l3mQfAuc-eMFuierXMHNbCRTgBq" },
                     { id: "xii_5_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["N5FQ8rk9LEE", "oXmiNL7bD-s", "3IPVZYf7C-U", "tw3lZ-GFgpk"] }
                 ],
@@ -384,7 +537,7 @@
                 "Unit 7: Dual Nature": [
                     { id: "xii_7_1", title: "Photoelectric Effect", v: ["KUQ5XQMVn3g"], p: "1izandXvQ50PRqIRpuuFP3w0fDtoi_QGo" },
                     { id: "xii_7_2", title: "Study of PE Effect", v: ["KUQ5XQMVn3g"], p: "1n89oKCiJG0i43m8IZCR65XAFk70ZAv6w" },
-                    { id: "xii_7_3", title: "Einstein’s PE Equation", v: ["i9CuYlAkbGA"], p: "1Q3K0tCrLubp6zUiEvEBCl0vEwZinL9GU" },
+                    { id: "xii_7_3", title: "Einstein's PE Equation", v: ["i9CuYlAkbGA"], p: "1Q3K0tCrLubp6zUiEvEBCl0vEwZinL9GU" },
                     { id: "xii_7_4", title: "De Broglie Waves", v: ["_2D9TD65j0Y"], p: "1SQqeS7Il7MD5iaJA0VY7SYwxCkjsDHqj" },
                     { id: "xii_7_5", title: "Application of Dual Nature", v: ["gN5VdPeWpk8"], p: "1Npge7VJv92bvohD3STEwYyi5tksno-2h" },
                     { id: "xii_7_pal", title: "IIT-PAL & Exam Prep", type: "pal", v: ["S7Gx7MQXKCM", "6xxqhAOzAXg", "aO21ufgJdVg", "dJkXdFJ8bKE", "HHay9UEClsw"] }
@@ -392,7 +545,7 @@
                 "Unit 8: Atoms & Nuclei": [
                     { id: "xii_8_1", title: "Early Atomic Models", v: ["BN6bmcvPE5A", "7mD9p9qVopg"], p: "1HnaBoBNwGIR5BlEaIL8be-_BviGMGb0Z" },
                     { id: "xii_8_2", title: "Bohr Model", v: ["7mD9p9qVopg"], p: "1u1asM4nrKWPTGncb62vvpmM-6uo8FUoQ" },
-                    { id: "xii_8_3", title: "Bohr’s Model for Hydrogen", v: ["j2IypY3c0MQ"], p: "1KYdRItI3nyiDHml4tndFk0ECt_zrO3xr" },
+                    { id: "xii_8_3", title: "Bohr's Model for Hydrogen", v: ["j2IypY3c0MQ"], p: "1KYdRItI3nyiDHml4tndFk0ECt_zrO3xr" },
                     { id: "xii_8_4", title: "Atomic Nucleus", v: ["Rzhro-oNrdM", "rkKuOGQL83k", "IgM-Jg_BkDA"], p: "1KXpRw0p2NXc_FeJN2cIFVOx-bgFDorfU" },
                     { id: "xii_8_5", title: "Mass Defect & Binding Energy", v: ["1uqdkSRD-Xw"], p: "1twSnqzW1oqke6DtuRS0PW2QJHn_M1lt_" },
                     { id: "xii_8_6", title: "Radioactivity", v: ["CbNMnzC5xK8"], p: "1QCr1rrmBaVmZPqW256XjyYvfjnBRk5MD" },
@@ -424,173 +577,336 @@
             }
         };
 
-        // --- RENDER SIDEBAR ---
+        // ─── UTILS ────────────────────────────────────────────────────────────────
+        // Build a flat lookup map for O(1) access
+        const moduleMap = new Map();
+        let totalModules = 0, totalVideos = 0, totalNotes = 0;
+
+        for (const [className, units] of Object.entries(syllabusData)) {
+            for (const [unitName, mods] of Object.entries(units)) {
+                for (const mod of mods) {
+                    moduleMap.set(mod.id, { mod, unitName, className });
+                    if (mod.type !== 'pal') {
+                        totalModules++;
+                        totalVideos += mod.v.length;
+                        if (mod.p) totalNotes++;
+                    }
+                }
+            }
+        }
+
+        // ─── WELCOME STATS ────────────────────────────────────────────────────────
+        document.getElementById('portal-stats').innerHTML = `
+            <div class="stat-box"><div class="num">${totalModules}</div><div class="lbl">Modules</div></div>
+            <div class="stat-box"><div class="num">${totalVideos}</div><div class="lbl">Videos</div></div>
+            <div class="stat-box"><div class="num">${totalNotes}</div><div class="lbl">Notes</div></div>
+        `;
+
+        // ─── RENDER SIDEBAR ───────────────────────────────────────────────────────
         function renderSidebar() {
             const sidebar = document.getElementById('sidebar-content');
             let html = '';
-
             for (const [className, units] of Object.entries(syllabusData)) {
                 html += `<div class="nav-header">${className}</div>`;
-                
                 for (const [unitName, modules] of Object.entries(units)) {
-                    html += `
-                    <details id="details-${unitName.replace(/[^a-zA-Z0-9]/g, '')}">
+                    const safeId = unitName.replace(/[^a-zA-Z0-9]/g, '');
+                    html += `<details id="details-${safeId}">
                         <summary>${unitName}</summary>
                         <ul class="module-list">
                             ${modules.map(mod => `
                                 <li>
-                                    <a onclick="loadModule('${mod.id}')" id="link_${mod.id}" data-id="${mod.id}" data-class="${className}" data-unit="${unitName}" class="${mod.type === 'pal' ? 'pal-link' : ''}">
+                                    <a onclick="loadModule('${mod.id}')" id="link_${mod.id}"
+                                       data-id="${mod.id}" tabindex="0"
+                                       role="button" aria-label="${mod.title}"
+                                       class="${mod.type === 'pal' ? 'pal-link' : ''}">
                                         ${mod.title}
                                     </a>
-                                </li>
-                            `).join('')}
+                                </li>`).join('')}
                         </ul>
                     </details>`;
                 }
             }
             sidebar.innerHTML = html;
+
+            // Keyboard: Enter/Space triggers loadModule
+            sidebar.querySelectorAll('.module-list a').forEach(a => {
+                a.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        loadModule(a.dataset.id);
+                    }
+                });
+            });
         }
 
-        // --- LOAD CONTENT ---
+        // ─── LOAD MODULE ──────────────────────────────────────────────────────────
         function loadModule(moduleId) {
-            // Find module in data
-            let module, unitName, className;
-            outerLoop:
-            for (const [cName, units] of Object.entries(syllabusData)) {
-                for (const [uName, mods] of Object.entries(units)) {
-                    const found = mods.find(m => m.id === moduleId);
-                    if (found) {
-                        module = found;
-                        unitName = uName;
-                        className = cName;
-                        break outerLoop;
-                    }
-                }
-            }
+            const entry = moduleMap.get(moduleId);
+            if (!entry) return;
+            const { mod: module, unitName, className } = entry;
 
-            if (!module) return;
+            // Hide welcome, show content
+            document.getElementById('welcome-screen').style.display = 'none';
+            const titleEl = document.getElementById('module-title');
+            titleEl.style.display = '';
+            titleEl.innerText = module.title;
+            document.getElementById('module-meta').innerText = `${className}  ›  ${unitName}`;
+            document.getElementById('breadcrumb-active').innerText = module.title;
 
-            // Update UI
-            document.getElementById('module-title').innerText = module.title;
-            document.getElementById('breadcrumb-active').innerText = `${className} / ${module.title}`;
-            
             const container = document.getElementById('dynamic-content');
             container.innerHTML = '';
 
-            // Handle IIT PAL Special View
             if (module.type === 'pal') {
                 container.innerHTML = `<div class="pal-card">
                     <div class="pal-header">🎓 IIT-PAL / Exam Preparation Playlist</div>
-                    <p>These videos are curated from the IIT-PAL initiative for competitive exam preparation (JEE/NEET).</p>
+                    <p>Curated lectures from the IIT-PAL initiative for JEE/NEET preparation.</p>
                 </div>`;
-                
                 module.v.forEach((vidId, idx) => {
-                    container.innerHTML += `
-                        <div class="resource-card">
-                            <h3 id="vid-${idx}">📺 IIT-PAL Lecture ${idx + 1}</h3>
-                            <div class="video-box">
-                                <iframe src="https://www.youtube-nocookie.com/embed/${vidId}" 
-                                        allowfullscreen 
-                                        referrerpolicy="strict-origin-when-cross-origin">
-                                </iframe>
-                            </div>
-                        </div>`;
+                    container.innerHTML += videoCard(`vid-${idx}`, `📺 IIT-PAL Lecture ${idx + 1}`, vidId);
                 });
             } else {
-                // Standard Module View
-                
                 // Videos
                 if (module.v.length > 0) {
                     module.v.forEach((vidId, idx) => {
-                        container.innerHTML += `
-                            <div class="resource-card">
-                                <h3 id="vid-${idx}">📺 Video Lecture ${module.v.length > 1 ? idx + 1 : ''}</h3>
-                                <div class="video-box">
-                                    <iframe src="https://www.youtube-nocookie.com/embed/${vidId}" 
-                                            allowfullscreen 
-                                            referrerpolicy="strict-origin-when-cross-origin">
-                                    </iframe>
-                                </div>
-                            </div>`;
+                        const label = module.v.length > 1 ? `📺 Video Lecture ${idx + 1}` : '📺 Video Lecture';
+                        container.innerHTML += videoCard(`vid-${idx}`, label, vidId);
                     });
                 } else {
-                    container.innerHTML += `<div class="resource-card"><h3>📺 Video Lecture</h3><p style="color:var(--text-muted); font-style:italic;">No video available for this topic.</p></div>`;
+                    container.innerHTML += emptyCard('📺 Video Lecture', 'No video available for this topic yet.');
                 }
-
                 // PDF
                 if (module.p) {
                     container.innerHTML += `
                         <div class="resource-card">
                             <h3 id="notes">📄 Study Notes</h3>
                             <div class="pdf-container">
-                                <iframe class="pdf-box" src="https://drive.google.com/file/d/${module.p}/preview"></iframe>
-                                <a href="https://drive.google.com/file/d/${module.p}/view" target="_blank" class="drive-btn">
-                                    ↗️ Open PDF in New Tab
-                                </a>
+                                <iframe class="pdf-box" loading="lazy"
+                                    src="https://drive.google.com/file/d/${module.p}/preview"
+                                    title="Study notes PDF for ${module.title}"></iframe>
+                                <div class="btn-row">
+                                    <a href="https://drive.google.com/file/d/${module.p}/view" target="_blank"
+                                       rel="noopener noreferrer" class="drive-btn">↗ Open in Drive</a>
+                                    <a href="https://drive.google.com/uc?export=download&id=${module.p}"
+                                       target="_blank" rel="noopener noreferrer" class="drive-btn">⬇ Download PDF</a>
+                                </div>
                             </div>
                         </div>`;
                 } else {
-                    container.innerHTML += `<div class="resource-card"><h3>📄 Study Notes</h3><p style="color:var(--text-muted); font-style:italic;">No notes available for this topic.</p></div>`;
+                    container.innerHTML += emptyCard('📄 Study Notes', 'No notes available for this topic yet.');
                 }
             }
 
-            // Highlight Link
+            // Persist last visited module
+            try { localStorage.setItem('lastModule', moduleId); } catch(e) {}
+
+            // Highlight active link & scroll it into view
             document.querySelectorAll('.module-list a').forEach(el => el.classList.remove('active'));
             const activeLink = document.getElementById('link_' + moduleId);
-            if(activeLink) activeLink.classList.add('active');
+            if (activeLink) {
+                activeLink.classList.add('active');
+                activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
 
-            // Generate TOC
             generateTOC();
             document.getElementById('main-content').scrollTop = 0;
+            closeSidebar(); // close on mobile after selection
         }
+
+        function videoCard(id, label, vidId) {
+            return `<div class="resource-card">
+                <h3 id="${id}">${label}</h3>
+                <div class="video-box">
+                    <iframe src="https://www.youtube-nocookie.com/embed/${vidId}"
+                        loading="lazy" allowfullscreen
+                        title="${label}"
+                        referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                </div>
+            </div>`;
+        }
+
+        function emptyCard(label, msg) {
+            return `<div class="resource-card">
+                <h3>${label}</h3>
+                <p class="unavailable">⚠ ${msg}</p>
+            </div>`;
+        }
+
+        // ─── TOC + SCROLL SPY ─────────────────────────────────────────────────────
+        let tocObserver = null;
 
         function generateTOC() {
             const tocList = document.getElementById('toc-list');
             tocList.innerHTML = '';
-            document.querySelectorAll('#dynamic-content h3').forEach(heading => {
+            const headings = document.querySelectorAll('#dynamic-content h3');
+
+            if (tocObserver) tocObserver.disconnect();
+
+            headings.forEach(heading => {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                a.href = `#${heading.id}`;
-                a.innerText = heading.innerText.replace('📺 ', '').replace('📄 ', '');
-                a.onclick = (e) => {
+                a.href = '#' + heading.id;
+                a.textContent = heading.textContent.replace(/^[📺📄]\s*/, '');
+                a.onclick = e => {
                     e.preventDefault();
-                    document.getElementById(heading.id).scrollIntoView({ behavior: 'smooth' });
+                    heading.scrollIntoView({ behavior: 'smooth' });
                 };
                 li.appendChild(a);
                 tocList.appendChild(li);
             });
+
+            // Scroll-spy via IntersectionObserver
+            tocObserver = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('#toc-list a').forEach(a => a.classList.remove('toc-active'));
+                        const active = tocList.querySelector(`a[href="#${entry.target.id}"]`);
+                        if (active) active.classList.add('toc-active');
+                    }
+                });
+            }, { root: document.getElementById('main-content'), threshold: 0.6 });
+
+            headings.forEach(h => tocObserver.observe(h));
         }
 
-        // --- SEARCH ---
+        // ─── SEARCH ───────────────────────────────────────────────────────────────
         function deepSearch() {
-            let input = document.getElementById('moduleSearch').value.toLowerCase();
+            const input = document.getElementById('moduleSearch').value.toLowerCase().trim();
             const allLinks = document.querySelectorAll('.module-list a');
+            const noResults = document.getElementById('no-results');
+            let anyVisible = false;
 
             allLinks.forEach(link => {
                 const text = link.innerText.toLowerCase();
+                const parentLi = link.parentElement;
                 const parentDetails = link.closest('details');
-                
-                if (text.includes(input)) {
-                    link.parentElement.style.display = "";
-                    if (input.length > 0) parentDetails.open = true; // Auto-expand
-                } else {
-                    link.parentElement.style.display = "none";
+                const match = text.includes(input);
+                parentLi.style.display = match ? '' : 'none';
+                if (match) {
+                    anyVisible = true;
+                    if (input.length > 0) parentDetails.open = true;
                 }
             });
+
+            // Show/hide nav-header sections
+            document.querySelectorAll('.nav-header').forEach(header => {
+                if (input.length === 0) { header.style.display = ''; return; }
+                // Check if any sibling details have visible items
+                let sib = header.nextElementSibling;
+                let hasVisible = false;
+                while (sib && !sib.classList.contains('nav-header')) {
+                    if (sib.tagName === 'DETAILS') {
+                        const visibleItems = [...sib.querySelectorAll('.module-list li')].some(li => li.style.display !== 'none');
+                        if (visibleItems) hasVisible = true;
+                    }
+                    sib = sib.nextElementSibling;
+                }
+                header.style.display = hasVisible ? '' : 'none';
+            });
+
+            noResults.classList.toggle('visible', !anyVisible && input.length > 0);
         }
 
-        // --- THEME ---
+        function onSearchInput() {
+            const val = document.getElementById('moduleSearch').value;
+            const clearBtn = document.getElementById('search-clear');
+            clearBtn.classList.toggle('visible', val.length > 0);
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('moduleSearch');
+            input.value = '';
+            input.focus();
+            onSearchInput();
+            deepSearch();
+            // Re-collapse all details
+            document.querySelectorAll('#sidebar-content details').forEach(d => d.open = false);
+        }
+
+        // ─── THEME ────────────────────────────────────────────────────────────────
         function toggleTheme() {
             const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const next = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            document.getElementById('theme-btn').textContent = next === 'dark' ? '☀ Light' : '🌙 Dark';
+            try { localStorage.setItem('theme', next); } catch(e) {}
         }
 
-        // Init
-        renderSidebar();
-        // Load first available module
-        window.onload = () => loadModule('xi_1_1');
+        // ─── MOBILE SIDEBAR ───────────────────────────────────────────────────────
+        const hamburger = document.getElementById('hamburger-btn');
+        const sidebar = document.getElementById('left-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
 
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            hamburger.setAttribute('aria-expanded', 'true');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+        }
+
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+        overlay.addEventListener('click', closeSidebar);
+
+        // ─── BACK TO TOP ──────────────────────────────────────────────────────────
+        const mainContent = document.getElementById('main-content');
+        const backToTop = document.getElementById('back-to-top');
+
+        mainContent.addEventListener('scroll', () => {
+            backToTop.classList.toggle('visible', mainContent.scrollTop > 300);
+        });
+
+        function scrollToTop() {
+            mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ─── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────
+        document.addEventListener('keydown', e => {
+            // Ctrl/Cmd + K → focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('moduleSearch').focus();
+                if (window.innerWidth <= 768) openSidebar();
+            }
+            // Escape → close mobile sidebar or clear search
+            if (e.key === 'Escape') {
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else if (document.getElementById('moduleSearch').value) {
+                    clearSearch();
+                }
+            }
+        });
+
+        // ─── INIT ─────────────────────────────────────────────────────────────────
+        (function init() {
+            // Restore theme
+            try {
+                const saved = localStorage.getItem('theme');
+                if (saved) {
+                    document.documentElement.setAttribute('data-theme', saved);
+                    document.getElementById('theme-btn').textContent = saved === 'dark' ? '☀ Light' : '🌙 Dark';
+                }
+            } catch(e) {}
+
+            renderSidebar();
+
+            // Restore last visited module or load default
+            try {
+                const last = localStorage.getItem('lastModule');
+                if (last && moduleMap.has(last)) {
+                    loadModule(last);
+                    return;
+                }
+            } catch(e) {}
+
+            loadModule('xi_1_1');
+        })();
     </script>
 </body>
 </html>
